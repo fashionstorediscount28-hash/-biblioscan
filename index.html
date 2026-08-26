@@ -107,7 +107,9 @@ document.querySelector('#analyze').onclick=async()=>{
   try{
     setProgress('Préparation de la photo…',5);
     const rows=await makeRows(selectedFile,5);
-    const worker=await Tesseract.createWorker('fra+eng',1,{logger:m=>{
+    Tesseract.createWorker('fra',1,{logger:m=>{
+  if(m.status==='recognizing text') setProgress('Lecture des tranches…',50);
+}})
       if(m.status==='recognizing text')setProgress('Lecture des tranches… '+Math.round((m.progress||0)*100)+'%',10+Math.round((m.progress||0)*55));
     }});
     const all=[];
