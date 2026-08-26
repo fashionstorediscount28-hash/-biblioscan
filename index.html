@@ -32,7 +32,7 @@ libraryInput.onchange=()=>handleFile(libraryInput.files[0]);
 document.querySelector('#takePhoto').onclick=()=>cameraInput.click();
 document.querySelector('#choosePhoto').onclick=()=>libraryInput.click();
 f.onchange=()=>{if(!f.files[0])return;im.src=URL.createObjectURL(f.files[0]);p.style.display='block';s.textContent='Photo prête.';o.innerHTML=''};
-change.onclick=()=>{cameraInput.value='';libraryInput.value='';p.style.display='none';o.innerHTML='';s.textContent=''};
-analyze.onclick=async()=>{s.textContent='Analyse en cours…';await new Promise(r=>setTimeout(r,900));let a=[['Candidat prioritaire',94,'Édition potentiellement recherchée'],['Candidat intéressant',82,'Auteur ou édition à vérifier'],['À vérifier',67,'Informations insuffisantes']];o.innerHTML='<div class="card"><h2>🔥 Livres à examiner</h2>'+a.map(x=>`<div class="book"><div class="cover">📖</div><div class="grow"><b>${x[0]}</b><div class="muted">${x[2]}</div></div><div class="score">${x[1]}</div></div>`).join('')+'</div>';s.textContent='Analyse terminée (démo).'};
-if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
+document.querySelector('#change').onclick=()=>{cameraInput.value='';libraryInput.value='';p.style.display='none';o.innerHTML='';s.textContent=''};
+document.querySelector('#analyze').onclick=async()=>{s.textContent='Analyse en cours…';await new Promise(r=>setTimeout(r,900));let a=[['Candidat prioritaire',94,'Édition potentiellement recherchée'],['Candidat intéressant',82,'Auteur ou édition à vérifier'],['À vérifier',67,'Informations insuffisantes']];o.innerHTML='<div class="card"><h2>🔥 Livres à examiner</h2>'+a.map(x=>`<div class="book"><div class="cover">📖</div><div class="grow"><b>${x[0]}</b><div class="muted">${x[2]}</div></div><div class="score">${x[1]}</div></div>`).join('')+'</div>';s.textContent='Analyse terminée (démo).'};
+if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js?v=2').then(r=>r.update());
 </script></body></html>
