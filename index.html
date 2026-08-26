@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#6d3df5"><link rel="manifest" href="manifest.json">
+<title>BiblioScan</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f7f7fb;color:#171522;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",Arial,sans-serif}
+header{background:linear-gradient(145deg,#5d2eea,#8c63ff);color:#fff;padding:28px 20px;border-radius:0 0 28px 28px}.wrap{max-width:720px;margin:auto}
+main{padding:20px 16px}.card{background:#fff;border:1px solid #ebe8f2;border-radius:22px;padding:20px;margin-bottom:16px}
+.drop{text-align:center;border:2px dashed #c9bdf7;padding:28px 18px}.icon{font-size:42px}
+.btn{border:0;border-radius:14px;background:#6d3df5;color:white;padding:14px 18px;font-weight:800;margin-top:12px}.secondary{background:#eeeafd;color:#5731cf}
+input{display:none}.preview{display:none}.preview img{width:100%;max-height:440px;object-fit:contain;border-radius:16px}.muted{color:#777487;font-size:14px;line-height:1.45}
+.book{display:flex;gap:14px;align-items:center;padding:13px 0;border-bottom:1px solid #eee}.book:last-child{border:0}.grow{flex:1}.score{font-size:22px;font-weight:900;color:#6d3df5}.cover{width:55px;height:78px;border-radius:8px;background:#e9e4ff;display:grid;place-items:center;font-size:25px}
+</style></head><body>
+<header><div class="wrap"><b>📚 BiblioScan</b><h1>Trouve les livres à potentiel.</h1><p>Photographie ton étagère et commence le tri.</p></div></header>
+<main class="wrap">
+<div class="card drop"><label for="photo"><div class="icon">📷</div><h2>Scanner mon étagère</h2><p class="muted">Choisis une photo nette des tranches de tes livres.</p><span class="btn">Choisir une photo</span><input id="photo" type="file" accept="image/*" capture="environment"></label></div>
+<div class="card preview" id="preview"><img id="img"><button class="btn" id="analyze">🔎 Analyser l'étagère</button> <button class="btn secondary" id="change">Changer</button></div>
+<p class="muted" id="status"></p><div id="out"></div>
+</main>
+<script>
+const f=document.querySelector('#photo'),p=document.querySelector('#preview'),im=document.querySelector('#img'),s=document.querySelector('#status'),o=document.querySelector('#out');
+f.onchange=()=>{if(!f.files[0])return;im.src=URL.createObjectURL(f.files[0]);p.style.display='block';s.textContent='Photo prête.';o.innerHTML=''};
+change.onclick=()=>{f.value='';p.style.display='none';o.innerHTML='';s.textContent=''};
+analyze.onclick=async()=>{s.textContent='Analyse en cours…';await new Promise(r=>setTimeout(r,900));let a=[['Candidat prioritaire',94,'Édition potentiellement recherchée'],['Candidat intéressant',82,'Auteur ou édition à vérifier'],['À vérifier',67,'Informations insuffisantes']];o.innerHTML='<div class="card"><h2>🔥 Livres à examiner</h2>'+a.map(x=>`<div class="book"><div class="cover">📖</div><div class="grow"><b>${x[0]}</b><div class="muted">${x[2]}</div></div><div class="score">${x[1]}</div></div>`).join('')+'</div>';s.textContent='Analyse terminée (démo).'};
+if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
+</script></body></html>
