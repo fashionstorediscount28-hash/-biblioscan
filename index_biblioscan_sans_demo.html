@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#6d3df5">
+<title>BiblioScan — OCR réel</title>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f7f6fb;color:#171421;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+header{background:linear-gradient(145deg,#5d2ee8,#8b5cf6);color:#fff;padding:24px 18px 30px}main{max-width:900px;margin:auto;padding:18px 14px 50px}
+.card{background:#fff;border-radius:24px;padding:18px;margin-bottom:16px;box-shadow:0 8px 28px #28145018}.drop{text-align:center;border:2px dashed #c9bdf7}
+.icon{font-size:38px}.actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}.btn{border:0;border-radius:14px;background:#6d3df5;color:#fff;font-size:16px;font-weight:700;padding:14px 18px}.secondary{background:#eee9ff;color:#5730bd}input[type=file]{display:none}
+#preview img{width:100%;max-height:430px;object-fit:contain;border-radius:14px;background:#111;display:none}.bar{height:12px;background:#ece8f8;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#6d3df5,#8b5cf6)}
+.results{display:grid;gap:12px}.book{display:flex;gap:14px;padding:14px;border:1px solid #ece8f4;border-radius:18px}.cover{width:72px;height:96px;border-radius:10px;background:#eee9ff;display:flex;align-items:center;justify-content:center;font-size:30px;flex:none;overflow:hidden}.cover img{width:100%;height:100%;object-fit:cover}.book h3{margin:0 0 4px}.book p{margin:4px 0;color:#777386}.score{margin-left:auto;font-size:24px;font-weight:800;color:#6d3df5}.muted{color:#777386}
+</style>
+</head>
+<body>
+<header><div style="max-width:900px;margin:auto"><h1>📚 BiblioScan</h1><p>Reconnaissance réelle des livres par photo</p></div></header>
+<main>
+<section class="card drop"><div class="icon">📷</div><h2>Scanner une étagère</h2><p class="muted">Prends une photo ou choisis une image de ta bibliothèque.</p>
+<div class="actions"><button class="btn" id="take">📷 Prendre une photo</button><button class="btn secondary" id="choose">🖼️ Choisir une image</button></div>
+<input id="camera" type="file" accept="image/*" capture="environment"><input id="library" type="file" accept="image/*"></section>
+<section class="card" id="preview" style="display:none"><img id="img" alt="Photo de l'étagère"><div class="actions" style="margin-top:12px"><button class="btn" id="analyze">🔎 Analyser l'étagère</button><button class="btn secondary" id="change">Changer</button></div></section>
+<section class="card" id="progress" style="display:none"><b id="progressText">Préparation...</b><div class="bar"><i id="progressBar"></i></div></section>
+<section id="out"></section>
+</main>
+<script>
+const camera=document.querySelector('#camera'),library=document.querySelector('#library'),preview=document.querySelector('#preview'),img=document.querySelector('#img'),out=document.querySelector('#out'),progress=document.querySelector('#progress'),progressText=document.querySelector('#progressText'),progressBar=document.querySelector('#progressBar');
+let selectedFile=null;
+function setFile(f){if(!f)return;selectedFile=f;img.src=URL.createObjectURL(f);img.style.display='block';preview.style.display='block';out.innerHTML='';progress.style.display='none'}
+take.onclick=()=>camera.click();choose.onclick=()=>library.click();camera.onchange=()=>setFile(camera.files[0]);library.onchange=()=>setFile(library.files[0]);change.onclick=()=>library.click();
+function setProgress(t,p){progress.style.display='block';progressText.textContent=t;progressBar.style.width=Math.min(100,p)+'%'}
+function cleanLines(t){return [...new Set(t.split(/\n+/).map(x=>x.replace(/[|_~]+/g,' ').trim()).filter(x=>x.length>=4&&/[A-Za-zÀ-ÿ]/.test(x)).filter(x=>!/^[0-9\s,.-]+$/.test(x)))].slice(0,30)}
+async function books(q){let r=await fetch('https://www.googleapis.com/books/v1/volumes?maxResults=5&q='+encodeURIComponent(q));if(!r.ok)return[];let d=await r.json();return(d.items||[]).map(v=>{let i=v.volumeInfo||{};return{title:i.title||'Titre inconnu',authors:(i.authors||[]).join(', '),date:i.publishedDate||'',image:(i.imageLinks&&(i.imageLinks.thumbnail||i.imageLinks.smallThumbnail))||'',link:i.infoLink||''}})}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function card(x){let b=x.book;return '<article class="book"><div class="cover">'+(b.image?'<img src="'+b.image.replace(/^http:/,'https:')+'">':'📖')+'</div><div style="flex:1"><h3>'+esc(b.title)+'</h3><p>'+esc(b.authors||'Auteur non indiqué')+'</p><p>'+esc(b.date||'Édition non indiquée')+'</p>'+(b.link?'<a href="'+b.link+'" target="_blank">Voir le livre</a>':'')+'</div><div class="score">'+x.score+'</div></article>'}
+analyze.onclick=async()=>{
+if(!selectedFile)return;out.innerHTML='';
+try{
+setProgress('Préparation de la photo…',5);
+let r=await Tesseract.recognize(selectedFile,'fra',{logger:m=>{if(m.status==='recognizing text')setProgress('Lecture de l’étagère…',15+Math.round((m.progress||0)*55))}});
+let lines=cleanLines(r.data.text),matches=[];
+setProgress('Recherche des correspondances…',75);
+for(let i=0;i<Math.min(lines.length,12);i++){try{let b=await books(lines[i]);if(b[0])matches.push({book:b[0],score:99-Math.min(20,i)})}catch(e){}setProgress('Recherche : '+lines[i].slice(0,42),78+Math.round((i+1)/Math.min(lines.length,12)*20))}
+matches.sort((a,b)=>b.score-a.score);progressText.textContent='Analyse terminée.';progressBar.style.width='100%';
+out.innerHTML='<section class="card"><h2>🔥 Livres à examiner</h2><p class="muted">'+(matches.length?matches.length+' correspondance(s) trouvée(s).':'Aucune correspondance fiable trouvée. Essaie une photo plus nette.')+'</p><div class="results">'+matches.map(card).join('')+'</div></section>';
+}catch(e){progressText.textContent='Erreur pendant l’analyse.';progressBar.style.width='100%';out.innerHTML='<section class="card"><h2>⚠️ Analyse impossible</h2><p class="muted">'+esc(e.message||'Une erreur est survenue.')+'</p></section>'}
+};
+</script>
+</body></html>
