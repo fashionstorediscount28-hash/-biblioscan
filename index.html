@@ -14,14 +14,25 @@ input{display:none}.preview{display:none}.preview img{width:100%;max-height:440p
 </style></head><body>
 <header><div class="wrap"><b>📚 BiblioScan</b><h1>Trouve les livres à potentiel.</h1><p>Photographie ton étagère et commence le tri.</p></div></header>
 <main class="wrap">
-<div class="card drop"><label for="photo"><div class="icon">📷</div><h2>Scanner mon étagère</h2><p class="muted">Choisis une photo nette des tranches de tes livres.</p><span class="btn">Choisir une photo</span><input id="photo" type="file" accept="image/*" capture="environment"></label></div>
+<div class="card drop"><label for="photo"><div class="icon">📷</div><h2>Scanner mon étagère</h2><p class="muted">Choisis une photo nette des tranches de tes livres.</p><div>
+<button type="button" class="btn" id="takePhoto">📷 Prendre une photo</button>
+<button type="button" class="btn secondary" id="choosePhoto">🖼️ Choisir dans Photos</button>
+<input id="cameraInput" type="file" accept="image/*" capture="environment">
+<input id="libraryInput" type="file" accept="image/*">
+</div></label></div>
 <div class="card preview" id="preview"><img id="img"><button class="btn" id="analyze">🔎 Analyser l'étagère</button> <button class="btn secondary" id="change">Changer</button></div>
 <p class="muted" id="status"></p><div id="out"></div>
 </main>
 <script>
-const f=document.querySelector('#photo'),p=document.querySelector('#preview'),im=document.querySelector('#img'),s=document.querySelector('#status'),o=document.querySelector('#out');
+const p=document.querySelector('#preview'),im=document.querySelector('#img'),s=document.querySelector('#status'),o=document.querySelector('#out');
+const cameraInput=document.querySelector('#cameraInput'), libraryInput=document.querySelector('#libraryInput');
+function handleFile(file){if(!file)return;im.src=URL.createObjectURL(file);p.style.display='block';s.textContent='Photo prête.';o.innerHTML='';}
+cameraInput.onchange=()=>handleFile(cameraInput.files[0]);
+libraryInput.onchange=()=>handleFile(libraryInput.files[0]);
+document.querySelector('#takePhoto').onclick=()=>cameraInput.click();
+document.querySelector('#choosePhoto').onclick=()=>libraryInput.click();
 f.onchange=()=>{if(!f.files[0])return;im.src=URL.createObjectURL(f.files[0]);p.style.display='block';s.textContent='Photo prête.';o.innerHTML=''};
-change.onclick=()=>{f.value='';p.style.display='none';o.innerHTML='';s.textContent=''};
+change.onclick=()=>{cameraInput.value='';libraryInput.value='';p.style.display='none';o.innerHTML='';s.textContent=''};
 analyze.onclick=async()=>{s.textContent='Analyse en cours…';await new Promise(r=>setTimeout(r,900));let a=[['Candidat prioritaire',94,'Édition potentiellement recherchée'],['Candidat intéressant',82,'Auteur ou édition à vérifier'],['À vérifier',67,'Informations insuffisantes']];o.innerHTML='<div class="card"><h2>🔥 Livres à examiner</h2>'+a.map(x=>`<div class="book"><div class="cover">📖</div><div class="grow"><b>${x[0]}</b><div class="muted">${x[2]}</div></div><div class="score">${x[1]}</div></div>`).join('')+'</div>';s.textContent='Analyse terminée (démo).'};
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
 </script></body></html>
